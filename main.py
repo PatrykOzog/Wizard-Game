@@ -1,13 +1,17 @@
 import os
 import sys
 import pygame
-from math import pi
+import math
 
 
 class Player(object):
 
     def __init__(self):
-        self.rect = pygame.Rect(45, 45, 20, 20)
+        self.player_image = pygame.image.load("Player.png").convert_alpha()
+        self.player_rect = self.player_image.get_rect(center=(60, 60))
+        self.rot_image = self.player_image
+        self.rot_image_rect = self.player_rect
+        # self.rect = pygame.Rect(45, 45, 20, 20)
 
     def move(self, dx, dy):
         if dx != 0:
@@ -16,22 +20,26 @@ class Player(object):
             self.move_single_axis(0, dy)
 
     def move_single_axis(self, dx, dy):
-        self.rect.x += dx
-        self.rect.y += dy
+        self.player_rect.x += dx
+        self.player_rect.y += dy
 
         for wall in walls:
-            if self.rect.colliderect(wall.rect):
+            if self.player_rect.colliderect(wall.rect):
                 if dx > 0:
-                    self.rect.right = wall.rect.left
+                    self.player_rect.right = wall.rect.left
                 if dx < 0:
-                    self.rect.left = wall.rect.right
+                    self.player_rect.left = wall.rect.right
                 if dy > 0:
-                    self.rect.bottom = wall.rect.top
+                    self.player_rect.bottom = wall.rect.top
                 if dy < 0:
-                    self.rect.top = wall.rect.bottom
+                    self.player_rect.top = wall.rect.bottom
 
-    def vision(self):
-        print("")
+    def rotate(self):
+        mx, my = pygame.mouse.get_pos()
+        ddx, ddy = mx - self.player_rect.centerx, my - self.player_rect.centery
+        angle = math.degrees(math.atan2(-ddy, ddx)) - 90
+        self.rot_image = pygame.transform.rotate(self.player_image, angle)
+        self.rot_image_rect = self.rot_image.get_rect(center=self.player_rect.center)
 
 
 class Wall(object):
@@ -44,7 +52,7 @@ class Wall(object):
 # os.environ["SDL_VIDEO_CENTERED"] = "1"
 pygame.init()
 
-pygame.display.set_caption("Get to the red square!")
+pygame.display.set_caption("Get the treasure!")
 screen = pygame.display.set_mode((1920, 1080))
 
 clock = pygame.time.Clock()
@@ -92,6 +100,9 @@ for row in level:
     y += 40
     x = 0
 
+icon = pygame.image.load("agent.png")
+pygame.display.set_icon(icon)
+
 running = True
 while running:
 
@@ -113,7 +124,7 @@ while running:
     if key[pygame.K_DOWN]:
         player.move(0, 2)
 
-    if player.rect.colliderect(end_rect):
+    if player.player_rect.colliderect(end_rect):
         pygame.quit()
         sys.exit()
 
@@ -121,7 +132,8 @@ while running:
     for wall in walls:
         pygame.draw.rect(screen, (0, 0, 0), wall.rect)
     pygame.draw.rect(screen, (255, 0, 0), end_rect)
-    pygame.draw.rect(screen, (255, 200, 0), player.rect)
+    screen.blit(player.rot_image, player.rot_image_rect)
+    player.rotate()
     pygame.display.update()  # flip/update?
     clock.tick(360)
 
