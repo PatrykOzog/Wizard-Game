@@ -1,13 +1,13 @@
 import os
 import sys
-import random
 import pygame
+from math import pi
 
 
 class Player(object):
 
     def __init__(self):
-        self.rect = pygame.Rect(32, 32, 16, 16)
+        self.rect = pygame.Rect(45, 45, 20, 20)
 
     def move(self, dx, dy):
         if dx != 0:
@@ -30,41 +30,55 @@ class Player(object):
                 if dy < 0:
                     self.rect.top = wall.rect.bottom
 
+    def vision(self):
+        print("")
+
 
 class Wall(object):
 
     def __init__(self, pos):
         walls.append(self)
-        self.rect = pygame.Rect(pos[0], pos[1], 16, 16)
+        self.rect = pygame.Rect(pos[0], pos[1], 40, 40)
 
 
-os.environ["SDL_VIDEO_CENTERED"] = "1"
+# os.environ["SDL_VIDEO_CENTERED"] = "1"
 pygame.init()
 
-
 pygame.display.set_caption("Get to the red square!")
-screen = pygame.display.set_mode((320, 240))
+screen = pygame.display.set_mode((1920, 1080))
 
 clock = pygame.time.Clock()
 walls = []
 player = Player()
 
 level = [
-    "WWWWWWWWWWWWWWWWWWWW",
-    "W                  W",
-    "W         WWWWWW   W",
-    "W   WWWW       W   W",
-    "W   W        WWWW  W",
-    "W WWW  WWWW        W",
-    "W   W     W W      W",
-    "W   W     W   WWW WW",
-    "W   WWW WWW   W W  W",
-    "W     W   W   W W  W",
-    "WWW   W   WWWWW W  W",
-    "W W      WW        W",
-    "W W   WWWW   WWW   W",
-    "W     W    T   W   W",
-    "WWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "W           W     W W   W   W         W W      W",
+    "W W WWWW   WWWWWW W W W   W W WWW W W W W WWWW W",
+    "W W W         W W       W   W W   W            W",
+    "W W W W W  WWWW W WWW W WWW WWW W W WWWWWW  WW W",
+    "W W W W       W   W   W W     W W W W       W  W",
+    "WWW WWW  WW WWW WWW   WWW W W WWW W W WWWWW W  W",
+    "W W W W   W     W W W                   W     WW",
+    "W W W WW  WWW WWW W WWWWW W W W W WWW WWW  WW  W",
+    "W     W   W W             W W W   W     W   W  W",
+    "WWW   W WWW W   WW WW WWW WWW WWW WW    W W W  W",
+    "W W   W W           W   W   W W         W W W  W",
+    "W W W W W W W  WW WWW W W W WWWWW WW   WW W WW W",
+    "W   W W     W   W W W W   W W     W       W    W",
+    "W WWW W   W W WWW W WWWWW W WWW WWW W W W WWW  W",
+    "W W W     W     W W   W W W   W     W   W W W  W",
+    "W W WWWW WW W WWW W  WW WWWWWWW WWW WWW       WW",
+    "W W W     W W             W W   W   W   W   W  W",
+    "W W W WW WWWW   W WW WW W W W WWW WWW WWW   W  W",
+    "W   W         W W W   W       W     W         WW",
+    "W WWWWW W WWW W WWW WWW    WW WW WW W W W WWW  W",
+    "W     W W W W     W W W     W     W W W W W    W",
+    "WWW W   WWW W WW WW W WWWWW W WWW W WWWWW WWW WW",
+    "W   W W   W           W     W W     W     W    W",
+    "WWW W W WWW W WWW W   WWW W WWWWW  WWW WW W W  W",
+    "W   W       W   W           W          T  W W  W",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
 ]
 
 x = y = 0
@@ -73,9 +87,9 @@ for row in level:
         if col == "W":
             Wall((x, y))
         if col == "T":
-            end_rect = pygame.Rect(x, y, 16, 16)
-        x += 16
-    y += 16
+            end_rect = pygame.Rect(x, y, 20, 20)
+        x += 40
+    y += 40
     x = 0
 
 running = True
@@ -108,7 +122,7 @@ while running:
         pygame.draw.rect(screen, (0, 0, 0), wall.rect)
     pygame.draw.rect(screen, (255, 0, 0), end_rect)
     pygame.draw.rect(screen, (255, 200, 0), player.rect)
-    pygame.display.update()   #flip/update?
+    pygame.display.update()  # flip/update?
     clock.tick(360)
 
 pygame.quit()
