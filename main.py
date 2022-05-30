@@ -7,7 +7,7 @@ import math
 class Player(object):
 
     def __init__(self):
-        self.player_image = pygame.image.load("Player.png").convert_alpha()
+        self.player_image = pygame.image.load("wizard1.png").convert_alpha()
         self.player_rect = self.player_image.get_rect(center=(60, 60))
         self.rot_image = self.player_image
         self.rot_image_rect = self.player_rect
