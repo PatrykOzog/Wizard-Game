@@ -8,10 +8,11 @@ class Player(object):
 
     def __init__(self):
         self.player_image = pygame.image.load("wizard1.png").convert_alpha()
+        self.wall_image = pygame.image.load("floor1.png").convert_alpha()
+        self.treasure_image = pygame.image.load("Treasure.png").convert_alpha()
         self.player_rect = self.player_image.get_rect(center=(60, 60))
         self.rot_image = self.player_image
         self.rot_image_rect = self.player_rect
-        # self.rect = pygame.Rect(45, 45, 20, 20)
 
     def move(self, dx, dy):
         if dx != 0:
@@ -130,8 +131,8 @@ while running:
 
     screen.fill((255, 255, 255))
     for wall in walls:
-        pygame.draw.rect(screen, (0, 0, 0), wall.rect)
-    pygame.draw.rect(screen, (255, 0, 0), end_rect)
+        screen.blit(player.wall_image, wall.rect)
+    screen.blit(player.treasure_image, end_rect)
     screen.blit(player.rot_image, player.rot_image_rect)
     player.rotate()
     pygame.display.update()  # flip/update?
