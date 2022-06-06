@@ -38,9 +38,26 @@ class Player(object):
     def rotate(self):
         mx, my = pygame.mouse.get_pos()
         ddx, ddy = mx - self.player_rect.centerx, my - self.player_rect.centery
-        angle = math.degrees(math.atan2(-ddy, ddx)) - 90
-        self.rot_image = pygame.transform.rotate(self.player_image, angle)
+        self.angle = math.degrees(math.atan2(-ddy, ddx)) - 90
+        self.rot_image = pygame.transform.rotate(self.player_image, self.angle)
         self.rot_image_rect = self.rot_image.get_rect(center=self.player_rect.center)
+
+    def cast_rays(self):
+        start_angle = math.radians(self.angle) - math.pi/6
+        for ray in range(120):
+            for depth in range(480):
+                target_x = self.player_rect.centerx - math.sin(start_angle) * depth
+                target_y = self.player_rect.centery - math.cos(start_angle) * depth
+                col = int(target_x/40)
+                row = int(target_y/40)
+                square = row*48 + col
+                if level[square] == "W":
+                    pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y))
+                    break
+                else:
+                    pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y))
+
+            start_angle += math.pi/360
 
 
 class Wall(object):
@@ -60,42 +77,43 @@ clock = pygame.time.Clock()
 walls = []
 player = Player()
 
-level = [
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "W           W     W W   W   W         W W      W",
-    "W W WWWW   WWWWWW W W W   W W WWW W W W W WWWW W",
-    "W W W         W W       W   W W   W            W",
-    "W W W W W  WWWW W WWW W WWW WWW W W WWWWWW  WW W",
-    "W W W W       W   W   W W     W W W W       W  W",
-    "WWW WWW  WW WWW WWW   WWW W W WWW W W WWWWW W  W",
-    "W W W W   W     W W W                   W     WW",
-    "W W W WW  WWW WWW W WWWWW W W W W WWW WWW  WW  W",
-    "W     W   W W             W W W   W     W   W  W",
-    "WWW   W WWW W   WW WW WWW WWW WWW WW    W W W  W",
-    "W W   W W           W   W   W W         W W W  W",
-    "W W W W W W W  WW WWW W W W WWWWW WW   WW W WW W",
-    "W   W W     W   W W W W   W W     W       W    W",
-    "W WWW W   W W WWW W WWWWW W WWW WWW W W W WWW  W",
-    "W W W     W     W W   W W W   W     W   W W W  W",
-    "W W WWWW WW W WWW W  WW WWWWWWW WWW WWW       WW",
-    "W W W     W W             W W   W   W   W   W  W",
-    "W W W WW WWWW   W WW WW W W W WWW WWW WWW   W  W",
-    "W   W         W W W   W       W     W         WW",
-    "W WWWWW W WWW W WWW WWW    WW WW WW W W W WWW  W",
-    "W     W W W W     W W W     W     W W W W W    W",
-    "WWW W   WWW W WW WW W WWWWW W WWW W WWWWW WWW WW",
-    "W   W W   W           W     W W     W     W    W",
-    "WWW W W WWW W WWW W   WWW W WWWWW  WWW WW W W  W",
-    "W   W       W   W           W          T  W W  W",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-]
+level = (
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+    "W           W     W W   W   W         W W      W"
+    "W W WWWW   WWWWWW W W W   W W WWW W W W W WWWW W"
+    "W W W         W W       W   W W   W            W"
+    "W W W W W  WWWW W WWW W WWW WWW W W WWWWWW  WW W"
+    "W W W W       W   W   W W     W W W W       W  W"
+    "WWW WWW  WW WWW WWW   WWW W W WWW W W WWWWW W  W"
+    "W W W W   W     W W W                   W     WW"
+    "W W W WW  WWW WWW W WWWWW W W W W WWW WWW  WW  W"
+    "W     W   W W             W W W   W     W   W  W"
+    "WWW   W WWW W   WW WW WWW WWW WWW WW    W W W  W"
+    "W W   W W           W   W   W W         W W W  W"
+    "W W W W W W W  WW WWW W W W WWWWW WW   WW W WW W"
+    "W   W W     W   W W W W   W W     W       W    W"
+    "W WWW W   W W WWW W WWWWW W WWW WWW W W W WWW  W"
+    "W W W     W     W W   W W W   W     W   W W W  W"
+    "W W WWWW WW W WWW W  WW WWWWWWW WWW WWW       WW"
+    "W W W     W W             W W   W   W   W   W  W"
+    "W W W WW WWWW   W WW WW W W W WWW WWW WWW   W  W"
+    "W   W         W W W   W       W     W         WW"
+    "W WWWWW W WWW W WWW WWW    WW WW WW W W W WWW  W"
+    "W     W W W W     W W W     W     W W W W W    W"
+    "WWW W   WWW W WW WW W WWWWW W WWW W WWWWW WWW WW"
+    "W   W W   W           W     W W     W     W    W"
+    "WWW W W WWW W WWW W   WWW W WWWWW  WWW WW W W  W"
+    "W   W       W   W           W          T  W W  W"
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+)
 
 x = y = 0
-for row in level:
-    for col in row:
-        if col == "W":
+for rows in range(27):
+    for columns in range(48):
+        square = rows*48+columns
+        if level[square] == "W":
             Wall((x, y))
-        if col == "T":
+        if level[square] == "T":
             end_rect = pygame.Rect(x, y, 20, 20)
         x += 40
     y += 40
@@ -135,6 +153,7 @@ while running:
     screen.blit(player.treasure_image, end_rect)
     screen.blit(player.rot_image, player.rot_image_rect)
     player.rotate()
+    player.cast_rays()
     pygame.display.update()  # flip/update?
     clock.tick(360)
 
