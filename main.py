@@ -10,30 +10,26 @@ class Player(object):
         self.player_image = pygame.image.load("wizard1.png").convert_alpha()
         self.wall_image = pygame.image.load("floor1.png").convert_alpha()
         self.treasure_image = pygame.image.load("Treasure.png").convert_alpha()
-        self.player_rect = self.player_image.get_rect(center=(60, 60))
+        self.player_rect = self.player_image.get_rect(center=(1860, 1000))
         self.rot_image = self.player_image
         self.rot_image_rect = self.player_rect
+        self.offset = pygame.math.Vector2()
 
     def move(self, dx, dy):
-        if dx != 0:
-            self.move_single_axis(dx, 0)
-        if dy != 0:
-            self.move_single_axis(0, dy)
-
-    def move_single_axis(self, dx, dy):
-        self.player_rect.x += dx
-        self.player_rect.y += dy
-
         for wall in walls:
-            if self.player_rect.colliderect(wall.rect):
-                if dx > 0:
-                    self.player_rect.right = wall.rect.left
-                if dx < 0:
-                    self.player_rect.left = wall.rect.right
-                if dy > 0:
-                    self.player_rect.bottom = wall.rect.top
-                if dy < 0:
-                    self.player_rect.top = wall.rect.bottom
+            wall.wall_rect.x -= dx
+            wall.wall_rect.y -= dy
+            self.offset.x -= 1
+            self.offset.y -= 1
+            if self.player_rect.colliderect(wall.wall_rect):
+                if dx != 0:
+                    for wall in walls:
+                        wall.wall_rect.x += dx
+                        self.offset.x += 1
+                if dy != 0:
+                    for wall in walls:
+                        wall.wall_rect.y += dy
+                        self.offset.y += 1
 
     def rotate(self):
         mx, my = pygame.mouse.get_pos()
@@ -44,18 +40,21 @@ class Player(object):
 
     def cast_rays(self):
         start_angle = math.radians(self.angle) - math.pi/6
-        for ray in range(120):
-            for depth in range(480):
+        for ray in range(1):
+            for depth in range(100):
                 target_x = self.player_rect.centerx - math.sin(start_angle) * depth
                 target_y = self.player_rect.centery - math.cos(start_angle) * depth
                 col = int(target_x/40)
                 row = int(target_y/40)
                 square = row*48 + col
-                if level[square] == "W":
-                    pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y))
+                raycast_rect = pygame.Rect(target_x, target_y, 1, 1)
+                if raycast_rect.colliderect(wall.wall_rect):
+                    pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y), 4)
                     break
-                else:
-                    pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y))
+                #else:
+                #    pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y), 4)
+                if enemy.enemy_rect.colliderect(raycast_rect):
+                    pygame.draw.rect(screen, (0, 255, 0), enemy.enemy_rect)
 
             start_angle += math.pi/360
 
@@ -64,7 +63,13 @@ class Wall(object):
 
     def __init__(self, pos):
         walls.append(self)
-        self.rect = pygame.Rect(pos[0], pos[1], 40, 40)
+        self.wall_rect = pygame.Rect(pos[0], pos[1], 40, 40)
+
+
+class Enemy(object):
+
+    def __init__(self):
+        self.enemy_rect = pygame.Rect(400, 100, 20, 20)
 
 
 # os.environ["SDL_VIDEO_CENTERED"] = "1"
@@ -76,6 +81,7 @@ screen = pygame.display.set_mode((1920, 1080))
 clock = pygame.time.Clock()
 walls = []
 player = Player()
+enemy = Enemy()
 
 level = (
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
@@ -149,7 +155,7 @@ while running:
 
     screen.fill((255, 255, 255))
     for wall in walls:
-        screen.blit(player.wall_image, wall.rect)
+        screen.blit(player.wall_image, wall.wall_rect)
     screen.blit(player.treasure_image, end_rect)
     screen.blit(player.rot_image, player.rot_image_rect)
     player.rotate()
