@@ -10,7 +10,7 @@ class Player(object):
         self.player_image = pygame.image.load("wizard1.png").convert_alpha()
         self.wall_image = pygame.image.load("floor1.png").convert_alpha()
         self.treasure_image = pygame.image.load("Treasure.png").convert_alpha()
-        self.player_rect = self.player_image.get_rect(center=(1850, 1000))
+        self.player_rect = self.player_image.get_rect(center=(480, 270))
         self.rot_image = self.player_image
         self.rot_image_rect = self.player_rect
         self.offset = pygame.math.Vector2()
@@ -41,7 +41,7 @@ class Player(object):
 
     def cast_rays(self):
         start_angle = math.radians(self.angle) - math.pi/6
-        for ray in range(5):
+        for ray in range(10):
             for depth in range(200):
                 target_x = self.player_rect.centerx - math.sin(start_angle) * depth
                 target_y = self.player_rect.centery - math.cos(start_angle) * depth
@@ -56,7 +56,7 @@ class Player(object):
                     continue
                 break
 
-            start_angle += math.pi / 15
+            start_angle += math.pi / 30
 
 
 class Wall(object):
@@ -80,43 +80,38 @@ screen = pygame.display.set_mode((1920, 1080))
 
 clock = pygame.time.Clock()
 walls = []
+rect_walls = []
+united = []
 player = Player()
 enemy = Enemy()
 
 level = (
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
-    "W           W     W W   W   W         W W      W"
-    "W W WWWW   WWWWWW W W W   W W WWW W W W W WWWW W"
-    "W W W         W W       W   W W   W            W"
-    "W W W W W  WWWW W WWW W WWW WWW W W WWWWWW  WW W"
-    "W W W W       W   W   W W     W W W W       W  W"
-    "WWW WWW  WW WWW WWW   WWW W W WWW W W WWWWW W  W"
-    "W W W W   W     W W W                   W     WW"
-    "W W W WW  WWW WWW W WWWWW W W W W WWW WWW  WW  W"
-    "W     W   W W             W W W   W     W   W  W"
-    "WWW   W WWW W   WW WW WWW WWW WWW WW    W W W  W"
-    "W W   W W           W   W   W W         W W W  W"
-    "W W W W W W W  WW WWW W W W WWWWW WW   WW W WW W"
-    "W   W W     W   W W W W   W W     W       W    W"
-    "W WWW W   W W WWW W WWWWW W WWW WWW W W W WWW  W"
-    "W W W     W     W W   W W W   W     W   W W W  W"
-    "W W WWWW WW W WWW W  WW WWWWWWW WWW WWW       WW"
-    "W W W     W W             W W   W   W   W   W  W"
-    "W W W WW WWWW   W WW WW W W W WWW WWW WWW   W  W"
-    "W   W         W W W   W       W     W         WW"
-    "W WWWWW W WWW W WWW WWW    WW WW WW W W W WWW  W"
-    "W     W W W W     W W W     W     W W W W W    W"
-    "WWW W   WWW W WW WW W WWWWW W WWW W WWWWW WWW WW"
-    "W   W W   W           W     W W     W     W    W"
-    "WWW W W WWW W WWW W   WWW W WWWWW  WWW WW W W  W"
-    "W   W       W   W           W          T  W W  W"
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+    "WWWWWWWWWWWWWWWWWWWW"
+    "W                  W"
+    "W                  W"
+    "W                  W"
+    "W                  W"
+    "W                  W"
+    "W                  W"
+    "W                  W"
+    "W        WW        W"
+    "W        WW        W"
+    "W                  W"
+    "W                  W"
+    "W                  W"
+    "W                  W"
+    "W                  W"
+    "W                  W"
+    "W                  W"
+    "W          T       W"
+    "W                  W"
+    "WWWWWWWWWWWWWWWWWWWW"
 )
 
 x = y = 0
-for rows in range(27):
-    for columns in range(48):
-        square = rows*48+columns
+for rows in range(20):
+    for columns in range(20):
+        square = rows*20+columns
         if level[square] == "W":
             Wall((x, y))
         if level[square] == "T":
@@ -124,6 +119,7 @@ for rows in range(27):
         x += 40
     y += 40
     x = 0
+
 
 icon = pygame.image.load("agent.png")
 pygame.display.set_icon(icon)
@@ -164,7 +160,7 @@ while running:
     wol2 = pygame.Rect(200, 200, 20, 20)
     wol = pygame.Rect.union(wol1, wol2)
     pygame.draw.rect(screen, (0, 255, 0), enemy.enemy_rect)
-    pygame.display.update()  # flip/update?
+    pygame.display.flip()  # flip/update?
     clock.tick(360)
 
 pygame.quit()
