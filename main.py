@@ -1,6 +1,7 @@
 import os
 import sys
 import pygame
+import pygame.gfxdraw
 import math
 
 
@@ -40,24 +41,32 @@ class Player(object):
         self.rot_image_rect = self.rot_image.get_rect(center=self.player_rect.center)
 
     def cast_rays(self):
+        points = []
+        starting_point = ((self.player_rect.centerx, self.player_rect.centery))
         start_angle = math.radians(self.angle) - math.pi/6
-        for ray in range(10):
-            for depth in range(200):
-                target_x = self.player_rect.centerx - math.sin(start_angle) * depth
-                target_y = self.player_rect.centery - math.cos(start_angle) * depth
+        for ray in range(50):
+            for depth in range(50):
+                target_x = self.player_rect.centerx - math.sin(start_angle) * depth * 5
+                target_y = self.player_rect.centery - math.cos(start_angle) * depth * 5
                 raycast_rect = pygame.Rect(target_x, target_y, 1, 1)
                 for wall in walls:
                     if raycast_rect.colliderect(wall.wall_rect):
                         #pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y), 4)
+                        points.append((target_x, target_y))
+                        screen.blit(player.wall_image, wall.wall_rect)
                         break
                     #else:
                         #pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y), 4)
                 else:
                     continue
                 break
+            points.append((target_x, target_y))
+            start_angle += math.pi / 150
 
-            start_angle += math.pi / 30
-
+        for point in points:
+            pygame.gfxdraw.filled_polygon(screen, (point, starting_point, self.player_rect.center), (255, 255, 100))
+            starting_point = point
+            #pygame.draw.circle(screen, (0, 255, 255), point, 5)
 
 class Wall(object):
 
@@ -80,8 +89,7 @@ screen = pygame.display.set_mode((1920, 1080))
 
 clock = pygame.time.Clock()
 walls = []
-rect_walls = []
-united = []
+points = []
 player = Player()
 enemy = Enemy()
 
@@ -149,16 +157,14 @@ while running:
         pygame.quit()
         sys.exit()
 
-    screen.fill((255, 255, 255))
+    screen.fill((25, 25, 25))
+    player.wall_image.set_alpha(50)
     for wall in walls:
         screen.blit(player.wall_image, wall.wall_rect)
     screen.blit(player.treasure_image, end_rect)
     screen.blit(player.rot_image, player.rot_image_rect)
     player.rotate()
     player.cast_rays()
-    wol1 = pygame.Rect(100, 100, 50, 50)
-    wol2 = pygame.Rect(200, 200, 20, 20)
-    wol = pygame.Rect.union(wol1, wol2)
     pygame.draw.rect(screen, (0, 255, 0), enemy.enemy_rect)
     pygame.display.flip()  # flip/update?
     clock.tick(360)
