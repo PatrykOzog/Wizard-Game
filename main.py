@@ -10,23 +10,22 @@ class Player(object):
 
     def __init__(self):
         self.player_image = pygame.image.load("wizard1.png").convert_alpha()
-        self.wall_image = pygame.image.load("floor1.png").convert_alpha()
         self.treasure_image = pygame.image.load("Treasure.png").convert_alpha()
         self.player_rect = self.player_image.get_rect(center=(480, 270))
         self.rot_image = self.player_image
         self.rot_image_rect = self.player_rect
-        self.light = (255, 255, 100, 70)
-
 
     def move(self, dx, dy):
-        enemy.enemy_rect.x -= dx
-        enemy.enemy_rect.y -= dy
+        for enemy in enemies:
+            enemy.enemy_rect.x -= dx
+            enemy.enemy_rect.y -= dy
         for wall in walls:
             wall.wall_rect.x -= dx
             wall.wall_rect.y -= dy
             if self.player_rect.colliderect(wall.wall_rect):
-                enemy.enemy_rect.x += dx
-                enemy.enemy_rect.y += dy
+                for enemy in enemies:
+                    enemy.enemy_rect.x += dx
+                    enemy.enemy_rect.y += dy
                 for wall in walls:
                     wall.wall_rect.x += dx
                     wall.wall_rect.y += dy
@@ -51,7 +50,7 @@ class Player(object):
                     if raycast_rect.colliderect(wall.wall_rect):
                         #pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y), 4)
                         points.append((target_x, target_y))
-                        screen.blit(player.wall_image, wall.wall_rect)
+                        screen.blit(wall.wall_image, wall.wall_rect)
                         break
                 else:
                     continue
@@ -60,7 +59,7 @@ class Player(object):
             start_angle += math.pi / 150
 
         for point in points:
-            pygame.gfxdraw.filled_polygon(screen, (point, starting_point, self.player_rect.center), self.light)
+            pygame.gfxdraw.filled_polygon(screen, (point, starting_point, self.player_rect.center), (255, 255, 100, 70))
             starting_point = point
             #pygame.draw.circle(screen, (0, 255, 255), point, 5)
             #screen.blit(enemy.enemy_rot_image, enemy.enemy_rot_image_rect)
@@ -73,22 +72,28 @@ class Player(object):
 class Wall(object):
 
     def __init__(self, pos):
+        self.wall_image = pygame.image.load("floor1.png").convert_alpha()
+        self.wall_image.set_alpha(50)
         walls.append(self)
         self.wall_rect = pygame.Rect(pos[0], pos[1], 40, 40)
 
 
 class Enemy(object):
 
-    def __init__(self):
+    def __init__(self, pos):
+        enemies.append(self)
+        self.enemy_rect = pygame.Rect(pos[0], pos[1], 32, 32)
         self.enemy_image = pygame.image.load("Spider.png").convert_alpha()
-        self.enemy_rect = self.enemy_image.get_rect(center=(500, 500))
         self.enemy_rot_image = self.enemy_image
         self.enemy_rot_image_rect = self.enemy_rect
 
     def move_towards_player(self):
         dx, dy = player.player_rect.x - self.enemy_rect.x, player.player_rect.y - self.enemy_rect.y
         dist = math.hypot(dx, dy)
-        dx, dy = dx / dist, dy / dist
+        try:
+            dx, dy = dx / dist, dy / dist
+        except ZeroDivisionError:
+            dx, dy = dx, dy
         self.enemy_rect.x += dx * 3
         self.enemy_rect.y += dy * 3
 
@@ -99,8 +104,9 @@ class Enemy(object):
         self.enemy_rot_image_rect = self.enemy_rot_image.get_rect(center=self.enemy_rect.center)
 
     def enemy_update(self):
-        enemy.move_towards_player()
-        enemy.enemy_rotate()
+        for enemy in enemies:
+            enemy.move_towards_player()
+            enemy.enemy_rotate()
 
 
 
@@ -114,7 +120,6 @@ clock = pygame.time.Clock()
 walls = []
 enemies = []
 player = Player()
-enemy = Enemy()
 
 level = (
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
@@ -161,6 +166,11 @@ for rows in range(30):
     y += 40
     x = 0
 
+enemies_generated = random.randrange(1, 4)
+for i in range(enemies_generated):
+    enemy_x, enemy_y = random.randrange(100, 1000), random.randrange(100, 1000)
+    Enemy((enemy_x, enemy_y))
+
 
 icon = pygame.image.load("agent.png")
 pygame.display.set_icon(icon)
@@ -192,14 +202,14 @@ while running:
         sys.exit()
 
     screen.fill((255, 255, 255))
-    player.wall_image.set_alpha(50)
     for wall in walls:
-        screen.blit(player.wall_image, wall.wall_rect)
+        screen.blit(wall.wall_image, wall.wall_rect)
     screen.blit(player.treasure_image, end_rect)
     screen.blit(player.rot_image, player.rot_image_rect)
-    screen.blit(enemy.enemy_rot_image, enemy.enemy_rot_image_rect)
     player.player_update()
-    enemy.enemy_update()
+    for enemy in enemies:
+        screen.blit(enemy.enemy_rot_image, enemy.enemy_rot_image_rect)
+        enemy.enemy_update()
     pygame.display.flip()  # flip/update?
     clock.tick(360)
 
