@@ -82,23 +82,23 @@ class Player(object):
     def cast_rays(self):
         points = []
         starting_point = (self.player_rect.centerx, self.player_rect.centery)
-        start_angle = math.radians(self.angle) - math.pi/6
+        start_angle = math.radians(self.angle) - math.pi / 6
         for ray in range(31):
             for depth in range(25):
                 target_x = self.player_rect.centerx - math.sin(start_angle) * depth * 30
                 target_y = self.player_rect.centery - math.cos(start_angle) * depth * 30
                 raycast_rect = pygame.Rect(target_x, target_y, 1, 1)
-                #for enemy in enemies:
+                # for enemy in enemies:
                 #    if raycast_rect.colliderect(enemy.enemy_rect):
                 #        screen.blit(enemy.enemy_rot_image, enemy.enemy_rot_image_rect)
                 for wall in walls:
                     if raycast_rect.colliderect(wall.wall_rect):
-                        #pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y), 4)
+                        # pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y), 4)
                         points.append((target_x, target_y))
                         screen.blit(wall.wall_image, wall.wall_rect)
                         break
-                    #else:
-                        #pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y), 4)
+                    # else:
+                    # pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y), 4)
                 else:
                     continue
                 break
@@ -108,8 +108,8 @@ class Player(object):
         for point in points:
             pygame.gfxdraw.filled_polygon(screen, (point, starting_point, self.player_rect.center), (255, 255, 100, 4))
             starting_point = point
-            #pygame.draw.circle(screen, (0, 255, 255), point, 5)
-            #screen.blit(enemy.enemy_rot_image, enemy.enemy_rot_image_rect)
+            # pygame.draw.circle(screen, (0, 255, 255), point, 5)
+            # screen.blit(enemy.enemy_rot_image, enemy.enemy_rot_image_rect)
 
     def player_update(self):
         player.rotate()
@@ -156,7 +156,8 @@ class Enemy(object):
     def move_towards_player(self):
         if self.player_visable:
             self.timer = 0
-        dirvect = pygame.math.Vector2(player.player_rect.x - self.enemy_rect.x,  player.player_rect.y - self.enemy_rect.y)
+        dirvect = pygame.math.Vector2(player.player_rect.x - self.enemy_rect.x,
+                                      player.player_rect.y - self.enemy_rect.y)
         try:
             dirvect.normalize()
         except ValueError:
@@ -229,9 +230,9 @@ class Enemy(object):
                     self.player_visable = False
                 for wall in walls:
                     if raycast_rect.colliderect(wall.wall_rect):
-                        #pygame.draw.line(screen, (255, 255, 0), (self.enemy_rect.centerx, self.enemy_rect.centery), (target_x, target_y), 4)
+                        # pygame.draw.line(screen, (255, 255, 0), (self.enemy_rect.centerx, self.enemy_rect.centery), (target_x, target_y), 4)
                         break
-                    #else:
+                    # else:
                     #    pygame.draw.line(screen, (255, 255, 0), (self.enemy_rect.centerx, self.enemy_rect.centery), (target_x, target_y), 4)
                 else:
                     continue
@@ -249,6 +250,7 @@ class Enemy(object):
             self.freeze_timer += 0.05
 
     def enemy_update(self):
+        enemy.frozen()
         enemy.enemy_rotate()
         enemy.enemy_cast_rays()
         if self.player_visable:
@@ -260,11 +262,48 @@ class Enemy(object):
             else:
                 enemy.move_random_direction()
 
+
+class Button:
+    def __init__(self, image, pos, text_input, font, base_color, hovering_color):
+        self.image = image
+        self.x_pos = pos[0]
+        self.y_pos = pos[1]
+        self.font = font
+        self.base_color, self.hovering_color = base_color, hovering_color
+        self.text_input = text_input
+        self.text = self.font.render(self.text_input, True, self.base_color)
+        if self.image is None:
+            self.image = self.text
+        self.rect = self.image.get_rect(center=(self.x_pos, self.y_pos))
+        self.text_rect = self.text.get_rect(center=(self.x_pos, self.y_pos))
+
+    def update(self, screen):
+        if self.image is not None:
+            screen.blit(self.image, self.rect)
+        screen.blit(self.text, self.text_rect)
+
+    def check_for_input(self, position):
+        if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top,
+                                                                                          self.rect.bottom):
+            return True
+        return False
+
+    def change_color(self, position):
+        if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top,
+                                                                                          self.rect.bottom):
+            self.text = self.font.render(self.text_input, True, self.hovering_color)
+        else:
+            self.text = self.font.render(self.text_input, True, self.base_color)
+
+
 # os.environ["SDL_VIDEO_CENTERED"] = "1"
 pygame.init()
 
 pygame.display.set_caption("Get the treasure!")
 screen = pygame.display.set_mode((1920, 1080))
+
+icon = pygame.image.load("icon.png")
+pygame.display.set_icon(icon)
 
 clock = pygame.time.Clock()
 walls = []
@@ -304,7 +343,7 @@ level = (
 x = y = 0
 for rows in range(25):
     for columns in range(25):
-        square = rows*25+columns
+        square = rows * 25 + columns
         if level[square] == "W":
             Wall((x, y))
         if level[square] == " ":
@@ -315,14 +354,53 @@ for rows in range(25):
     y += 128
     x = 0
 
-enemies_generated = 2 #random.randrange(1, 4)
+enemies_generated = 2  # random.randrange(1, 4)
 for i in range(enemies_generated):
     enemy_x, enemy_y = random.randrange(100, 1000), random.randrange(100, 1000)
     Enemy((enemy_x, enemy_y))
 
-icon = pygame.image.load("icon.png")
-pygame.display.set_icon(icon)
+def main_menu():
+    BG = pygame.image.load("Background.png")
 
+    def get_font(size):  # Returns Press-Start-2P in the desired size
+        return pygame.font.Font("font.ttf", size)
+
+    menu_running = True
+    while menu_running:
+        screen.blit(BG, (0, 0))
+
+        MENU_MOUSE_POS = pygame.mouse.get_pos()
+
+        MENU_TEXT = get_font(100).render("MAIN MENU", True, "#b68f40")
+        MENU_RECT = MENU_TEXT.get_rect(center=(640, 100))
+
+        PLAY_BUTTON = Button(image=pygame.image.load("Play Rect.png"), pos=(640, 250),
+                             text_input="PLAY", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
+        OPTIONS_BUTTON = Button(image=pygame.image.load("Options Rect.png"), pos=(640, 400),
+                                text_input="OPTIONS", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
+        QUIT_BUTTON = Button(image=pygame.image.load("Quit Rect.png"), pos=(640, 550),
+                             text_input="QUIT", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
+
+        screen.blit(MENU_TEXT, MENU_RECT)
+
+        for button in [PLAY_BUTTON, OPTIONS_BUTTON, QUIT_BUTTON]:
+            button.change_color(MENU_MOUSE_POS)
+            button.update(screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if QUIT_BUTTON.check_for_input(MENU_MOUSE_POS):
+                    pygame.quit()
+                    sys.exit()
+                if PLAY_BUTTON.check_for_input(MENU_MOUSE_POS):
+                    menu_running = False
+
+        pygame.display.flip()
+
+main_menu()
 running = True
 while running:
 
@@ -370,14 +448,13 @@ while running:
         player.magic_missile()
 
     for enemy in enemies:
-        enemy.frozen()
         enemy.enemy_update()
         if enemy.is_frozen:
             screen.blit(enemy.enemy_frozen_rot_image, enemy.enemy_rot_image_rect)
         else:
             screen.blit(enemy.enemy_rot_image, enemy.enemy_rot_image_rect)
 
-    #screen.blit(player.missile_image, player.missile_rect)
+    # screen.blit(player.missile_image, player.missile_rect)
 
     pygame.display.flip()  # flip/update?
     clock.tick(360)
