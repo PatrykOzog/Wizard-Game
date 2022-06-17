@@ -6,12 +6,147 @@ import math
 import random
 
 
+class Game:
+    def __init__(self):
+        self.screen = pygame.display.set_mode((1920, 1080))
+        pygame.display.set_caption("Get the treasure!")
+        icon = pygame.image.load("Assets/Icon.png")
+        pygame.display.set_icon(icon)
+        self.clock = pygame.time.Clock()
+        self.walls = []
+        self.floors = []
+        self.enemies = []
+        self.level = (
+            "WWWWWWWWWWWWWWWWWWWWWWWWW"
+            "W                       W"
+            "W                       W"
+            "W        WW             W"
+            "W        WW             W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W                       W"
+            "W          T            W"
+            "W                       W"
+            "WWWWWWWWWWWWWWWWWWWWWWWWW"
+        )
+
+    def generate_maze(self):
+        x = y = 0
+        for rows in range(25):
+            for columns in range(25):
+                square = rows * 25 + columns
+                if self.level[square] == "W":
+                    Wall((x, y))
+                if self.level[square] == " ":
+                    Floor((x, y))
+                if self.level[square] == "T":
+                    end_rect = pygame.Rect(x, y, 20, 20)
+                x += 128
+            y += 128
+            x = 0
+
+        enemies_generated = 2  # random.randrange(1, 4)
+        for i in range(enemies_generated):
+            enemy_x, enemy_y = random.randrange(100, 1000), random.randrange(100, 1000)
+            Enemy((enemy_x, enemy_y))
+
+    def play(self):
+        running = True
+        while running:
+
+            game.clock.tick(60)
+
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT:
+                    running = False
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
+                    running = False
+                if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1 and player.missile_time == 0 and player.time_between_shots >= 5:
+                    player.generate_missile()
+                    player.time_between_shots = 0
+
+            key = pygame.key.get_pressed()
+            if key[pygame.K_a]:
+                player.move(-18, 0)
+            if key[pygame.K_d]:
+                player.move(18, 0)
+            if key[pygame.K_w]:
+                player.move(0, -18)
+            if key[pygame.K_s]:
+                player.move(0, 18)
+
+            # if player.player_rect.colliderect(end_rect):
+            # pygame.quit()
+            # sys.exit()
+
+            game.screen.fill((25, 25, 25))
+
+            for floor in self.floors:
+                if player.ground_rect.colliderect(floor.floor_rect):
+                    game.screen.blit(floor.floor_image, floor.floor_rect)
+
+            # game.screen.blit(player.treasure_image, end_rect)
+            player.player_update()
+            game.screen.blit(player.rot_image, player.rot_image_rect)
+
+            for wall in self.walls:
+                if player.ground_rect.colliderect(wall.wall_rect):
+                    self.screen.blit(wall.wall_image, wall.wall_rect)
+
+            player.time_between_shots += 0.05
+            if player.missile_generated:
+                player.magic_missile()
+
+            for enemy in self.enemies:
+                if player.missile_rect.colliderect(enemy.enemy_rect):
+                    enemy.is_frozen = True
+                    player.destroy_missile()
+                if enemy.freeze_timer > 3:
+                    enemy.freeze_timer = 0
+                    enemy.is_frozen = False
+                if enemy.is_frozen:
+                    enemy.freeze_timer += 0.05
+                enemy.enemy_rotate()
+                enemy.enemy_cast_rays()
+                if enemy.player_visable:
+                    enemy.move_towards_player()
+                else:
+                    enemy.timer += 0.05
+                    if enemy.timer < 5:
+                        enemy.move_towards_player()
+                    else:
+                        enemy.move_random_direction()
+                if enemy.is_frozen:
+                    self.screen.blit(enemy.enemy_frozen_rot_image, enemy.enemy_rot_image_rect)
+                else:
+                    self.screen.blit(enemy.enemy_rot_image, enemy.enemy_rot_image_rect)
+
+            # screen.blit(player.missile_image, player.missile_rect)
+
+            pygame.display.flip()  # flip/update?
+            game.clock.tick(360)
+
+
 class Player(object):
 
     def __init__(self):
-        self.player_image = pygame.image.load("wizard.png").convert_alpha()
-        self.treasure_image = pygame.image.load("Treasure.png").convert_alpha()
-        self.missile_image = pygame.image.load("Missile.png").convert_alpha()
+        self.player_image = pygame.image.load("Assets/wizard.png").convert_alpha()
+        self.treasure_image = pygame.image.load("Assets/Treasure.png").convert_alpha()
+        self.missile_image = pygame.image.load("Assets/Missile.png").convert_alpha()
         self.player_rect = self.player_image.get_rect(center=(960, 540))
         self.missile_rect = self.missile_image.get_rect(center=(0, 0))
         self.rot_image = self.player_image
@@ -24,25 +159,25 @@ class Player(object):
     def move(self, dx, dy):
         self.missile_rect.centerx -= dx
         self.missile_rect.centery -= dy
-        for floor in floors:
+        for floor in game.floors:
             floor.floor_rect.x -= dx
             floor.floor_rect.y -= dy
-        for enemy in enemies:
+        for enemy in game.enemies:
             enemy.enemy_rect.x -= dx
             enemy.enemy_rect.y -= dy
-        for wall in walls:
+        for wall in game.walls:
             wall.wall_rect.x -= dx
             wall.wall_rect.y -= dy
             if self.player_rect.colliderect(wall.wall_rect):
                 self.missile_rect.centerx += dx
                 self.missile_rect.centery += dy
-                for floor in floors:
+                for floor in game.floors:
                     floor.floor_rect.x += dx
                     floor.floor_rect.y += dy
-                for enemy in enemies:
+                for enemy in game.enemies:
                     enemy.enemy_rect.x += dx
                     enemy.enemy_rect.y += dy
-                for wall in walls:
+                for wall in game.walls:
                     wall.wall_rect.x += dx
                     wall.wall_rect.y += dy
 
@@ -60,7 +195,7 @@ class Player(object):
 
     def magic_missile(self):
         global missile_direction
-        screen.blit(self.missile_image, self.missile_rect)
+        game.screen.blit(self.missile_image, self.missile_rect)
         if self.missile_time == 0:
             mx, my = pygame.mouse.get_pos()
             missile_direction = pygame.math.Vector2(mx - player.player_rect.centerx, my - player.player_rect.centery)
@@ -68,7 +203,7 @@ class Player(object):
         missile_direction.scale_to_length(50)
         self.missile_rect.move_ip(missile_direction)
         self.missile_time += 0.05
-        for wall in walls:
+        for wall in game.walls:
             if self.missile_rect.colliderect(wall.wall_rect):
                 player.destroy_missile()
         if self.missile_time > 1:
@@ -91,11 +226,11 @@ class Player(object):
                 # for enemy in enemies:
                 #    if raycast_rect.colliderect(enemy.enemy_rect):
                 #        screen.blit(enemy.enemy_rot_image, enemy.enemy_rot_image_rect)
-                for wall in walls:
+                for wall in game.walls:
                     if raycast_rect.colliderect(wall.wall_rect):
                         # pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y), 4)
                         points.append((target_x, target_y))
-                        screen.blit(wall.wall_image, wall.wall_rect)
+                        game.screen.blit(wall.wall_image, wall.wall_rect)
                         break
                     # else:
                     # pygame.draw.line(screen, (255, 255, 0), (self.player_rect.centerx, self.player_rect.centery), (target_x, target_y), 4)
@@ -106,7 +241,8 @@ class Player(object):
             start_angle += math.pi / 90
 
         for point in points:
-            pygame.gfxdraw.filled_polygon(screen, (point, starting_point, self.player_rect.center), (255, 255, 100, 4))
+            pygame.gfxdraw.filled_polygon(game.screen, (point, starting_point, self.player_rect.center),
+                                          (255, 255, 100, 4))
             starting_point = point
             # pygame.draw.circle(screen, (0, 255, 255), point, 5)
             # screen.blit(enemy.enemy_rot_image, enemy.enemy_rot_image_rect)
@@ -119,28 +255,28 @@ class Player(object):
 class Wall(object):
 
     def __init__(self, pos):
-        self.wall_image = pygame.image.load("Wall.png").convert_alpha()
+        self.wall_image = pygame.image.load("Assets/Wall.png").convert_alpha()
         self.wall_image.set_alpha(50)
-        walls.append(self)
+        game.walls.append(self)
         self.wall_rect = pygame.Rect(pos[0], pos[1], 128, 128)
 
 
 class Floor(object):
 
     def __init__(self, pos):
-        self.floor_image = pygame.image.load("Floor.png").convert_alpha()
+        self.floor_image = pygame.image.load("Assets/Floor.png").convert_alpha()
         self.floor_image.set_alpha(50)
-        floors.append(self)
+        game.floors.append(self)
         self.floor_rect = pygame.Rect(pos[0], pos[1], 128, 128)
 
 
 class Enemy(object):
 
     def __init__(self, pos):
-        enemies.append(self)
+        game.enemies.append(self)
         self.enemy_rect = pygame.Rect(pos[0], pos[1], 95, 95)
-        self.enemy_image = pygame.image.load("Monster.png").convert_alpha()
-        self.enemy_frozen_image = pygame.image.load("Frozen_Monster.png").convert_alpha()
+        self.enemy_image = pygame.image.load("Assets/Monster.png").convert_alpha()
+        self.enemy_frozen_image = pygame.image.load("Assets/Frozen_Monster.png").convert_alpha()
         self.enemy_rot_image = self.enemy_image
         self.enemy_rot_image_rect = self.enemy_rect
         self.enemy_frozen_rot_image = self.enemy_frozen_image
@@ -166,7 +302,7 @@ class Enemy(object):
         dirvect.scale_to_length(10)
         if not self.is_frozen:
             self.enemy_rect.move_ip(dirvect)
-        for wall in walls:
+        for wall in game.walls:
             if self.enemy_rect.colliderect(wall.wall_rect):
                 self.enemy_rect.move_ip(-dirvect)
                 if wall.wall_rect.bottom == self.enemy_rect.top or wall.wall_rect.top == self.enemy_rect.bottom:
@@ -187,7 +323,7 @@ class Enemy(object):
                 self.enemy_rect.y += 15
             elif self.direction == 3:
                 self.enemy_rect.y -= 15
-        for wall in walls:
+        for wall in game.walls:
             if self.enemy_rect.colliderect(wall.wall_rect):
                 if self.direction == 0:
                     self.enemy_rect.x -= 15
@@ -228,7 +364,7 @@ class Enemy(object):
                     lock = True
                 elif not lock:
                     self.player_visable = False
-                for wall in walls:
+                for wall in game.walls:
                     if raycast_rect.colliderect(wall.wall_rect):
                         # pygame.draw.line(screen, (255, 255, 0), (self.enemy_rect.centerx, self.enemy_rect.centery), (target_x, target_y), 4)
                         break
@@ -239,28 +375,9 @@ class Enemy(object):
                 break
             start_angle += math.pi / 30
 
-    def frozen(self):
-        if player.missile_rect.colliderect(enemy.enemy_rect):
-            self.is_frozen = True
-            player.destroy_missile()
-        if self.freeze_timer > 3:
-            self.freeze_timer = 0
-            self.is_frozen = False
-        if self.is_frozen:
-            self.freeze_timer += 0.05
+    # def frozen(self):
 
-    def enemy_update(self):
-        enemy.frozen()
-        enemy.enemy_rotate()
-        enemy.enemy_cast_rays()
-        if self.player_visable:
-            enemy.move_towards_player()
-        else:
-            self.timer += 0.05
-            if self.timer < 5:
-                enemy.move_towards_player()
-            else:
-                enemy.move_random_direction()
+    # def enemy_update(self):
 
 
 class Button:
@@ -299,93 +416,39 @@ class Button:
 # os.environ["SDL_VIDEO_CENTERED"] = "1"
 pygame.init()
 
-pygame.display.set_caption("Get the treasure!")
-screen = pygame.display.set_mode((1920, 1080))
-
-icon = pygame.image.load("icon.png")
-pygame.display.set_icon(icon)
-
-clock = pygame.time.Clock()
-walls = []
-floors = []
-enemies = []
+Game()
 player = Player()
-key_pressed = False
+game = Game()
+game.generate_maze()
 
-level = (
-    "WWWWWWWWWWWWWWWWWWWWWWWWW"
-    "W                       W"
-    "W                       W"
-    "W        WW             W"
-    "W        WW             W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W                       W"
-    "W          T            W"
-    "W                       W"
-    "WWWWWWWWWWWWWWWWWWWWWWWWW"
-)
-
-x = y = 0
-for rows in range(25):
-    for columns in range(25):
-        square = rows * 25 + columns
-        if level[square] == "W":
-            Wall((x, y))
-        if level[square] == " ":
-            Floor((x, y))
-        if level[square] == "T":
-            end_rect = pygame.Rect(x, y, 20, 20)
-        x += 128
-    y += 128
-    x = 0
-
-enemies_generated = 2  # random.randrange(1, 4)
-for i in range(enemies_generated):
-    enemy_x, enemy_y = random.randrange(100, 1000), random.randrange(100, 1000)
-    Enemy((enemy_x, enemy_y))
 
 def main_menu():
-    BG = pygame.image.load("Background.png")
+    BG = pygame.image.load("Assets/Background.png")
 
     def get_font(size):  # Returns Press-Start-2P in the desired size
-        return pygame.font.Font("font.ttf", size)
+        return pygame.font.Font("Fonts/font.ttf", size)
 
     menu_running = True
     while menu_running:
-        screen.blit(BG, (0, 0))
+        game.screen.blit(BG, (0, 0))
 
         MENU_MOUSE_POS = pygame.mouse.get_pos()
 
         MENU_TEXT = get_font(100).render("MAIN MENU", True, "#b68f40")
         MENU_RECT = MENU_TEXT.get_rect(center=(640, 100))
 
-        PLAY_BUTTON = Button(image=pygame.image.load("Play Rect.png"), pos=(640, 250),
+        PLAY_BUTTON = Button(image=pygame.image.load("Assets/Play Rect.png"), pos=(640, 250),
                              text_input="PLAY", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
-        OPTIONS_BUTTON = Button(image=pygame.image.load("Options Rect.png"), pos=(640, 400),
+        OPTIONS_BUTTON = Button(image=pygame.image.load("Assets/Options Rect.png"), pos=(640, 400),
                                 text_input="OPTIONS", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
-        QUIT_BUTTON = Button(image=pygame.image.load("Quit Rect.png"), pos=(640, 550),
+        QUIT_BUTTON = Button(image=pygame.image.load("Assets/Quit Rect.png"), pos=(640, 550),
                              text_input="QUIT", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
 
-        screen.blit(MENU_TEXT, MENU_RECT)
+        game.screen.blit(MENU_TEXT, MENU_RECT)
 
         for button in [PLAY_BUTTON, OPTIONS_BUTTON, QUIT_BUTTON]:
             button.change_color(MENU_MOUSE_POS)
-            button.update(screen)
+            button.update(game.screen)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -396,67 +459,11 @@ def main_menu():
                     pygame.quit()
                     sys.exit()
                 if PLAY_BUTTON.check_for_input(MENU_MOUSE_POS):
-                    menu_running = False
+                    game.play()
 
         pygame.display.flip()
 
+
 main_menu()
-running = True
-while running:
-
-    clock.tick(60)
-
-    for e in pygame.event.get():
-        if e.type == pygame.QUIT:
-            running = False
-        if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
-            running = False
-        if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1 and player.missile_time == 0 and player.time_between_shots >= 5:
-            player.generate_missile()
-            player.time_between_shots = 0
-
-    key = pygame.key.get_pressed()
-    if key[pygame.K_a]:
-        player.move(-18, 0)
-    if key[pygame.K_d]:
-        player.move(18, 0)
-    if key[pygame.K_w]:
-        player.move(0, -18)
-    if key[pygame.K_s]:
-        player.move(0, 18)
-
-    if player.player_rect.colliderect(end_rect):
-        pygame.quit()
-        sys.exit()
-
-    screen.fill((25, 25, 25))
-
-    for floor in floors:
-        if player.ground_rect.colliderect(floor.floor_rect):
-            screen.blit(floor.floor_image, floor.floor_rect)
-
-    screen.blit(player.treasure_image, end_rect)
-    player.player_update()
-    screen.blit(player.rot_image, player.rot_image_rect)
-
-    for wall in walls:
-        if player.ground_rect.colliderect(wall.wall_rect):
-            screen.blit(wall.wall_image, wall.wall_rect)
-
-    player.time_between_shots += 0.05
-    if player.missile_generated:
-        player.magic_missile()
-
-    for enemy in enemies:
-        enemy.enemy_update()
-        if enemy.is_frozen:
-            screen.blit(enemy.enemy_frozen_rot_image, enemy.enemy_rot_image_rect)
-        else:
-            screen.blit(enemy.enemy_rot_image, enemy.enemy_rot_image_rect)
-
-    # screen.blit(player.missile_image, player.missile_rect)
-
-    pygame.display.flip()  # flip/update?
-    clock.tick(360)
 
 pygame.quit()
