@@ -12,6 +12,14 @@ class Game:
         pygame.display.set_caption("Get the treasure!")
         icon = pygame.image.load("Assets/Icon.png")
         pygame.display.set_icon(icon)
+        self.missile_sound = pygame.mixer.Sound("Music/gra-sopelekspell.mp3")
+        self.hit_sound = pygame.mixer.Sound("Music/gra-hitsound.mp3")
+        self.death_sound = pygame.mixer.Sound("Music/gra-playerdeath.mp3")
+        self.chest_sound = pygame.mixer.Sound("Music/gra-skrzynka.mp3")
+        pygame.mixer.music.load("Music/gra-music.mp3")
+        self.music_volume = 1
+        self.sound_volume = 1
+        pygame.mixer.music.play(-1, 0)
         self.clock = pygame.time.Clock()
         self.walls = []
         self.floors = []
@@ -65,16 +73,17 @@ class Game:
             Enemy((enemy_x, enemy_y))
 
     def play(self):
-        running = True
-        while running:
+        play_running = True
+        while play_running:
 
             game.clock.tick(60)
 
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
-                    running = False
+                    pygame.quit()
+                    sys.exit()
                 if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
-                    running = False
+                    play_running = False
                 if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1 and player.missile_time == 0 and player.time_between_shots >= 5:
                     player.generate_missile()
                     player.time_between_shots = 0
@@ -114,6 +123,7 @@ class Game:
             for enemy in self.enemies:
                 if player.missile_rect.colliderect(enemy.enemy_rect):
                     enemy.is_frozen = True
+                    self.hit_sound.play()
                     player.destroy_missile()
                 if enemy.freeze_timer > 3:
                     enemy.freeze_timer = 0
@@ -140,6 +150,119 @@ class Game:
             pygame.display.flip()  # flip/update?
             game.clock.tick(360)
 
+    def main_menu(self):
+        background = pygame.image.load("Assets/Background.jpg")
+
+        def get_font(size):
+            return pygame.font.Font("Fonts/ka1.ttf", size)
+
+        menu_running = True
+        while menu_running:
+            self.screen.blit(background, (0, 0))
+
+            MENU_MOUSE_POS = pygame.mouse.get_pos()
+
+            MENU_TEXT = get_font(120).render("Main menu", True, "#b68f40")
+            MENU_RECT = MENU_TEXT.get_rect(center=(945, 100))
+
+            PLAY_BUTTON = Button(image=pygame.image.load("Assets/Play Rect.png"), pos=(945, 250),
+                                 text_input="Play", font=get_font(80), base_color="#d7fcd4", hovering_color="White")
+            OPTIONS_BUTTON = Button(image=pygame.image.load("Assets/Options Rect.png"), pos=(945, 850),
+                                    text_input="Options", font=get_font(80), base_color="#d7fcd4",
+                                    hovering_color="White")
+            QUIT_BUTTON = Button(image=pygame.image.load("Assets/Quit Rect.png"), pos=(945, 1000),
+                                 text_input="Quit", font=get_font(80), base_color="#d7fcd4", hovering_color="White")
+
+            self.screen.blit(MENU_TEXT, MENU_RECT)
+
+            for button in [PLAY_BUTTON, OPTIONS_BUTTON, QUIT_BUTTON]:
+                button.change_color(MENU_MOUSE_POS)
+                button.update(self.screen)
+
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT or (e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):
+                    pygame.quit()
+                    sys.exit()
+                if e.type == pygame.MOUSEBUTTONDOWN:
+                    if QUIT_BUTTON.check_for_input(MENU_MOUSE_POS):
+                        pygame.quit()
+                        sys.exit()
+                    if PLAY_BUTTON.check_for_input(MENU_MOUSE_POS):
+                        game.play()
+                    if OPTIONS_BUTTON.check_for_input(MENU_MOUSE_POS):
+                        game.options()
+
+            pygame.display.flip()
+
+    def options(self):
+        background = pygame.image.load("Assets/Background.jpg")
+        def get_font(size):
+            return pygame.font.Font("Fonts/ka1.ttf", size)
+
+        options_running = True
+        while options_running:
+            self.screen.blit(background, (0, 0))
+
+            OPTIONS_MOUSE_POS = pygame.mouse.get_pos()
+
+            VOLUME_TEXT = get_font(80).render("Music volume", True, "#b68f40")
+            VOLUME_RECT = VOLUME_TEXT.get_rect(center=(945, 200))
+            VOLUME_SCAlE = get_font(50).render(f"{int(self.music_volume*100)}", True, "#b68f40")
+            VOLUME_SCAlE_RECT = VOLUME_SCAlE.get_rect(center=(945, 400))
+            SOUND_TEXT = get_font(80).render("Sound volume", True, "#b68f40")
+            SOUND_RECT = SOUND_TEXT.get_rect(center=(945, 700))
+            SOUND_SCAlE = get_font(50).render(f"{int(self.sound_volume * 100)}", True, "#b68f40")
+            SOUND_SCAlE_RECT = SOUND_SCAlE.get_rect(center=(945, 900))
+            self.screen.blit(VOLUME_TEXT, VOLUME_RECT)
+            self.screen.blit(VOLUME_SCAlE, VOLUME_SCAlE_RECT)
+            self.screen.blit(SOUND_TEXT, SOUND_RECT)
+            self.screen.blit(SOUND_SCAlE, SOUND_SCAlE_RECT)
+
+            VOLUME_PLUS = Button(image=pygame.image.load("Assets/Plus.png"), pos=(1190, 400),
+                                 text_input="", font=get_font(80), base_color="#d7fcd4", hovering_color="White")
+            VOLUME_MINUS = Button(image=pygame.image.load("Assets/Minus.png"), pos=(700, 400),
+                                 text_input="", font=get_font(80), base_color="#d7fcd4", hovering_color="White")
+            SOUND_PLUS = Button(image=pygame.image.load("Assets/Plus.png"), pos=(1190, 900),
+                                 text_input="", font=get_font(80), base_color="#d7fcd4", hovering_color="White")
+            SOUND_MINUS = Button(image=pygame.image.load("Assets/Minus.png"), pos=(700, 900),
+                                 text_input="", font=get_font(80), base_color="#d7fcd4", hovering_color="White")
+
+
+            for button in [VOLUME_PLUS, VOLUME_MINUS, SOUND_PLUS, SOUND_MINUS]:
+                button.change_color(OPTIONS_MOUSE_POS)
+                button.update(self.screen)
+
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
+                    options_running = False
+                if e.type == pygame.MOUSEBUTTONDOWN:
+                    if VOLUME_PLUS.check_for_input(OPTIONS_MOUSE_POS):
+                        if self.music_volume <= 0.9:
+                            self.music_volume += 0.1
+                            pygame.mixer.music.set_volume(self.music_volume)
+                    if VOLUME_MINUS.check_for_input(OPTIONS_MOUSE_POS):
+                        if self.music_volume >= 0.1:
+                            self.music_volume -= 0.1
+                            pygame.mixer.music.set_volume(self.music_volume)
+                    if SOUND_PLUS.check_for_input(OPTIONS_MOUSE_POS):
+                        if self.sound_volume <= 0.9:
+                            self.sound_volume += 0.1
+                            self.missile_sound.set_volume(self.sound_volume)
+                            self.hit_sound.set_volume(self.sound_volume)
+                            self.death_sound.set_volume(self.sound_volume)
+                            self.chest_sound.set_volume(self.sound_volume)
+                    if SOUND_MINUS.check_for_input(OPTIONS_MOUSE_POS):
+                        if self.sound_volume >= 0.1:
+                            self.sound_volume -= 0.1
+                            self.missile_sound.set_volume(self.sound_volume)
+                            self.hit_sound.set_volume(self.sound_volume)
+                            self.death_sound.set_volume(self.sound_volume)
+                            self.chest_sound.set_volume(self.sound_volume)
+
+            pygame.display.flip()
 
 class Player(object):
 
@@ -192,6 +315,7 @@ class Player(object):
         self.missile_generated = True
         self.missile_rect.center = self.player_rect.center
         self.missile_time = 0
+        game.missile_sound.play()
 
     def magic_missile(self):
         global missile_direction
@@ -400,14 +524,12 @@ class Button:
         screen.blit(self.text, self.text_rect)
 
     def check_for_input(self, position):
-        if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top,
-                                                                                          self.rect.bottom):
+        if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top, self.rect.bottom):
             return True
         return False
 
     def change_color(self, position):
-        if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top,
-                                                                                          self.rect.bottom):
+        if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top, self.rect.bottom):
             self.text = self.font.render(self.text_input, True, self.hovering_color)
         else:
             self.text = self.font.render(self.text_input, True, self.base_color)
@@ -420,50 +542,6 @@ Game()
 player = Player()
 game = Game()
 game.generate_maze()
-
-
-def main_menu():
-    BG = pygame.image.load("Assets/Background.png")
-
-    def get_font(size):  # Returns Press-Start-2P in the desired size
-        return pygame.font.Font("Fonts/font.ttf", size)
-
-    menu_running = True
-    while menu_running:
-        game.screen.blit(BG, (0, 0))
-
-        MENU_MOUSE_POS = pygame.mouse.get_pos()
-
-        MENU_TEXT = get_font(100).render("MAIN MENU", True, "#b68f40")
-        MENU_RECT = MENU_TEXT.get_rect(center=(640, 100))
-
-        PLAY_BUTTON = Button(image=pygame.image.load("Assets/Play Rect.png"), pos=(640, 250),
-                             text_input="PLAY", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
-        OPTIONS_BUTTON = Button(image=pygame.image.load("Assets/Options Rect.png"), pos=(640, 400),
-                                text_input="OPTIONS", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
-        QUIT_BUTTON = Button(image=pygame.image.load("Assets/Quit Rect.png"), pos=(640, 550),
-                             text_input="QUIT", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
-
-        game.screen.blit(MENU_TEXT, MENU_RECT)
-
-        for button in [PLAY_BUTTON, OPTIONS_BUTTON, QUIT_BUTTON]:
-            button.change_color(MENU_MOUSE_POS)
-            button.update(game.screen)
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if QUIT_BUTTON.check_for_input(MENU_MOUSE_POS):
-                    pygame.quit()
-                    sys.exit()
-                if PLAY_BUTTON.check_for_input(MENU_MOUSE_POS):
-                    game.play()
-
-        pygame.display.flip()
-
-
-main_menu()
+game.main_menu()
 
 pygame.quit()
